@@ -32,14 +32,17 @@ jobs:
           set -o pipefail
           ./gradlew assembleDebug 2>&1 | tee /tmp/build.log
 
-      - name: Report build errors
+      # Only runs when the build above fails. Turns the important part of the
+      # Gradle log into annotations, which are much easier to read on a phone
+      # than the raw log.
+      - name: Show build errors
         if: failure()
         run: |
           awk '/FAILURE: Build failed/{f=1} f' /tmp/build.log | head -14 | sed 's/^/::error::/' || true
-          tail -8 /tmp/build.log | sed 's/^/::notice::/' || true
+          grep -E '^e: ' /tmp/build.log | head -10 | sed 's/^/::error::/' || true
 
       - name: Upload APK
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: CineVerse-debug-apk
           path: app/build/outputs/apk/debug/*.apk
