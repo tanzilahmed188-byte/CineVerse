@@ -23,6 +23,10 @@ on:
       - "gradlew"
       - ".github/workflows/noor-apk.yml"
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -53,7 +57,29 @@ jobs:
         if: failure()
         run: |
           awk '/FAILURE: Build failed/{f=1} f' /tmp/build.log | head -14 | sed 's/^/::error::/' || true
-          grep -E '^e: ' /tmp/build.log | head -10 | sed 's/^/::error::/' || true
+          grep -aE '^e: ' /tmp/build.log | head -10 | sed 's/^/::error::/' || true
+
+      # Writes the real compiler messages into a file that is easier to read
+      # from a phone: the PR comment (pull requests only).
+      - name: Collect error details
+        if: failure()
+        run: |
+          {
+            echo "## ❌ Noor build failed"
+            echo
+            echo '```'
+            grep -aE '^\s*e: ' /tmp/build.log | head -25 || true
+            awk '/FAILURE: Build failed/{f=1} f' /tmp/build.log | head -25 || true
+            echo '```'
+          } > /tmp/errors.md
+          wc -l /tmp/errors.md
+
+      - name: Comment errors on pull request
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/errors.md || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v6
