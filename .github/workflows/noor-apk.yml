@@ -24,7 +24,7 @@ on:
       - ".github/workflows/noor-apk.yml"
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -87,3 +87,16 @@ jobs:
           name: Noor-debug-apk
           path: noor/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      # main-এ বিল্ড সফল হলে APK টা সরাসরি Releases পেজে দেওয়া হয় —
+      # ফোন থেকে এক ক্লিকে ডাউনলোড করার জন্য।
+      - name: Publish APK to release
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APK=$(ls noor/build/outputs/apk/debug/*.apk | head -1)
+          TAG=noor-latest
+          gh release view "$TAG" >/dev/null 2>&1 ||             gh release create "$TAG" --title "নূর — দুআ ও আমল (APK)"               --notes "নূর অ্যাপের সর্বশেষ installer (debug)। ফোনে ডাউনলোড করে ইনস্টল করুন — \`noor-app-debug.apk\`।"
+          cp "$APK" /tmp/noor-app-debug.apk
+          gh release upload "$TAG" /tmp/noor-app-debug.apk --clobber
