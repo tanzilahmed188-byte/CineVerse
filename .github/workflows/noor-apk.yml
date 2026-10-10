@@ -1,0 +1,102 @@
+name: Build Noor APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "noor/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle/**"
+      - "gradlew"
+      - ".github/workflows/noor-apk.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "noor/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle/**"
+      - "gradlew"
+      - ".github/workflows/noor-apk.yml"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build Noor debug APK
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :noor:assembleDebug 2>&1 | tee /tmp/build.log
+
+      # Only runs when the build above fails. Turns the important part of the
+      # Gradle log into annotations, which are much easier to read on a phone
+      # than the raw log.
+      - name: Show build errors
+        if: failure()
+        run: |
+          awk '/FAILURE: Build failed/{f=1} f' /tmp/build.log | head -14 | sed 's/^/::error::/' || true
+          grep -aE '^e: ' /tmp/build.log | head -10 | sed 's/^/::error::/' || true
+
+      # Writes the real compiler messages into a file that is easier to read
+      # from a phone: the PR comment (pull requests only).
+      - name: Collect error details
+        if: failure()
+        run: |
+          {
+            echo "## ❌ Noor build failed"
+            echo
+            echo '```'
+            grep -aE '^\s*e: ' /tmp/build.log | head -25 || true
+            awk '/FAILURE: Build failed/{f=1} f' /tmp/build.log | head -25 || true
+            echo '```'
+          } > /tmp/errors.md
+          wc -l /tmp/errors.md
+
+      - name: Comment errors on pull request
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/errors.md || true
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v6
+        with:
+          name: Noor-debug-apk
+          path: noor/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # main-এ বিল্ড সফল হলে APK টা সরাসরি Releases পেজে দেওয়া হয় —
+      # ফোন থেকে এক ক্লিকে ডাউনলোড করার জন্য।
+      - name: Publish APK to release
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APK=$(ls noor/build/outputs/apk/debug/*.apk | head -1)
+          TAG=noor-latest
+          gh release view "$TAG" >/dev/null 2>&1 ||             gh release create "$TAG" --title "নূর — দুআ ও আমল (APK)"               --notes "নূর অ্যাপের সর্বশেষ installer (debug)। ফোনে ডাউনলোড করে ইনস্টল করুন — \`noor-app-debug.apk\`।"
+          cp "$APK" /tmp/noor-app-debug.apk
+          gh release upload "$TAG" /tmp/noor-app-debug.apk --clobber

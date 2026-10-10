@@ -1,31 +1,67 @@
-# CineVerse Android source project
+# নূর — দুআ ও আমল (Noor)
 
-This is an Android Studio source project, not a prebuilt APK. It includes a GitHub Actions workflow to build a debug APK in the cloud without a PC.
+> একটি অফলাইন অ্যান্ড্রয়েড অ্যাপ: **৯৩টি যাচাইকৃত দুআ ও আমল** — প্রতিটির সাথে **আরবি টেক্সট, বাংলা উচ্চারণ, বাংলা অর্থ, ফজিলত/উপকারিতা এবং কুরআন-হাদিসের রেফারেন্স**।
 
-## Build from an Android phone (cloud build)
-1. Sign in to GitHub in your phone browser and create a **new private repository**.
-2. Upload the contents of this project to the repository (extract the ZIP first; upload the files/folders inside `CineVerseAndroid`, including `.github`).
-3. Open the repository's **Actions** tab, select **Build CineVerse APK**, and tap **Run workflow**. If asked, enable Actions.
-4. When the run completes successfully, open that run and download the `CineVerse-debug-apk` artifact. Extract it and install the APK. Android may ask you to allow installs from your browser/files app.
+এই রিপোজিটরিতে দুটি প্রজেক্ট আছে:
 
-The workflow also runs automatically on every push to `main` and on every pull request, so a broken change is caught before it lands.
+| মডিউল | অ্যাপ | অবস্থা |
+| --- | --- | --- |
+| `noor/` | **নূর — দুআ ও আমল** (Kotlin + Jetpack Compose) | প্রধান অ্যাপ |
+| `app/` | CineVerse (পুরনো সোর্স প্রজেক্ট) | রেফারেন্সের জন্য রাখা |
 
-## Project layout
+---
+
+## অ্যাপটি কী দেয়
+
+- **৯৩টি দুআ, ১২টি ক্যাটাগরি** — ঘুম, সকাল-সন্ধ্যা ও সফর, খাওয়া-দাওয়া, নামাজ ও ইবাদত, পবিত্রতা ও পোশাক, যিকির, দুশ্চিন্তা-ঋণ-ভয়, রোগ ও শিফা, পরিবার ও সমাজ, ক্ষমা ও তাওবা, আখিরাত ও জান্নাত, কুরআনের দুআ।
+- **প্রতিটি কনটেন্ট যাচাইকৃত** — আরবি টেক্সট, উচ্চারণ, বাংলা অর্থ, ফজিলত এবং সূত্র (সহীহ বুখারী, সহীহ মুসলিম, আবু দাউদ, তিরমিজী, নাসায়ী, মুসনাদে আহমাদ, কুরআনের আয়াত)। প্রতিটির সাথে হাদিসের মানও (সহীহ / হাসান) লেখা আছে।
+- **কোনো দুআ কপি, শেয়ার ও প্রিয় তালিকায় সংরক্ষণ** করার সুবিধা।
+- **ডিজিটাল তাসবিহ** কাউন্টার — ৩৩/১০০ টার্গেট, ভাইব্রেশন ফিডব্যাক, কাউন্ট সেভ হয়।
+- **সার্চ** — বাংলা অর্থ, উচ্চারণ বা রেফারেন্স দিয়ে দুআ খোঁজা যায়।
+- **সম্পূর্ণ অফলাইন** — সব ডেটা অ্যাপের ভেতরে (`assets/data/*.json`), ইন্টারনেটের দরকার নেই। কোনো বিজ্ঞাপন নেই।
+
+## ডিজাইন ও অ্যানিমেশন
+
+- পান্না-সবুজ (emerald) + সোনালি প্যালেট, আরবি-ইসলামি জ্যামিতিক নকশা।
+- **Amiri** ফন্টে আরবি (নসখ ক্যালিগ্রাফি) এবং **Hind Siliguri**-তে বাংলা — দুটোই SIL Open Font License।
+- স্মুথ অ্যানিমেশন: ধীরে বদলানো গ্রেডিয়েন্ট ব্যাকড্রপ, জ্বলজ্বলে তারা, স্ক্রিন ট্রানজিশনে স্লাইড + ফেড, তালিকার স্ট্যাগার এন্ট্রি, কার্ডে চাপ দিলে স্প্রিং-স্কেল, "আজকের দুআ" কার্ডে সোনালি ঝিলিক, প্রিয় আইকনে পপ অ্যানিমেশন।
+- ডার্ক মোড ও এজ-টু-এজ (notification bar-এর নিচ পর্যন্ত) সাপোর্ট।
+
+## GitHub Actions দিয়ে ফোন থেকে APK বানান
+
+1. GitHub-এ সাইন ইন করে এই রিপোজিটরি খুলুন (অথবা আপনার নিজের রিপোতে আপলোড করুন)।
+2. **Actions** ট্যাব → **Build Noor APK** → **Run workflow** চাপুন।
+3. রান শেষ হলে সেই রান থেকে `Noor-debug-apk` artifact ডাউনলোড করে extract করে `app-debug.apk` ইনস্টল করুন (Android একটি বার অনুমতি চাইতে পারে)।
+
+`noor/` ফোল্ডারের কোনো ফাইল বদলালে বা `main`-এ push হলে ওয়ার্কফ্লো নিজে থেকেই চলে। Debug APK তৈরি হয় `noor/build/outputs/apk/debug/` এ।
+
+## সোর্স স্ট্রাকচার
 
 ```
-app/
-  build.gradle.kts                                  Android + Kotlin + Compose config
-  src/main/AndroidManifest.xml                      app manifest
-  src/main/java/com/cineverse/app/MainActivity.kt    single-activity Compose UI
-build.gradle.kts                                    root script (plugin versions)
-settings.gradle.kts                                 includes the :app module
-gradle/wrapper/                                     Gradle wrapper (8.10.2)
-.github/workflows/main.yml                          APK build workflow
+noor/
+  build.gradle.kts                                  অ্যাপ মডিউল কনফিগ
+  src/main/AndroidManifest.xml                      ম্যানিফেস্ট
+  src/main/assets/data/duas_1.json, duas_2.json     ৯৩টি দুআ (আরবি, উচ্চারণ, অর্থ, ফজিলত, রেফারেন্স)
+  src/main/java/com/noor/dua/
+    MainActivity.kt                                 single-activity Compose entry point
+    data/DuaData.kt                                 JSON লোড, ক্যাটাগরি, সার্চ
+    ui/NoorApp.kt                                   নেভিগেশন, বটম বার, প্রেফারেন্স
+    ui/HomeScreen.kt                                হোম, আজকের দুআ, ক্যাটাগরি
+    ui/CategoriesScreen.kt                          সার্চ, ক্যাটাগরি, তালিকা
+    ui/DuaDetailScreen.kt                           দুআর বিস্তারিত (আরবি → অর্থ → ফজিলত → রেফারেন্স)
+    ui/MoreScreen.kt                                আরও, প্রিয় দুআ, তাসবিহ কাউন্টার
+    ui/Common.kt, ui/theme/Theme.kt                 কম্পোনেন্ট, রঙ, টাইপোগ্রাফি, ব্যাকড্রপ
+  src/main/res/font/                                Amiri + Hind Siliguri (OFL)
+  src/main/res/mipmap-*/                            লঞ্চার আইকন (tools/make_icons.py দিয়ে তৈরি)
+.github/workflows/noor-apk.yml                      নূর APK বিল্ড
+.github/workflows/cineverse-apk.yml                 পুরনো CineVerse APK বিল্ড (আলাদা)
 ```
 
-The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk` during the build.
+আইকন আবার তৈরি করতে: `python3 tools/make_icons.py` (Pillow দরকার)।
 
-## Important limitations
-- A successful cloud build creates a debug APK; it does not prove all movie sources work.
-- The supplied Cloudstream `.cs3` extensions require a compatible runtime and are not executed by this app as-is. This source does not implement a Cloudstream extension runtime or automatically provide full-length movie streams.
-- Only use streams you have permission to access.
+## সম্পর্কে কয়েকটি জরুরি কথা
+
+- ফজিলতের বর্ণনাগুলো হাদিসের অনুবাদ-ভাষ্য; দুআর রেফারেন্স প্রতিটির নিচে দেওয়া আছে — চাইলে নিজেই মূল সূত্র মিলিয়ে নিতে পারবেন।
+- সুনির্দিষ্ট রোগের চিকিৎসায় দুআর পাশাপাশি ডাক্তারের পরামর্শ নেওয়া অবশ্যই জরুরি।
+- বাংলা ভাষার জন্য ব্যবহার করা ফন্ট দুটি Google Fonts থেকে (SIL OFL) নেওয়া।
+- ফাইল `duas_1.json` / `duas_2.json` এ নতুন দুআ যোগ করা খুব সহজ — শুধু ক্যাটাগরির `id` মিলিয়ে একটি JSON অবজেক্ট যোগ করলেই অ্যাপে চলে আসবে।
