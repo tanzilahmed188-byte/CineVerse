@@ -1,9 +1,11 @@
-
 name: Build CineVerse APK
 
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
 
@@ -13,30 +15,35 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Build debug APK
         run: |
-          chmod +x gradlew || true
-          if [ -f gradlew ]; then
-            ./gradlew assembleDebug
-          else
-            gradle assembleDebug
-          fi
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew assembleDebug 2>&1 | tee /tmp/build.log
+
+      # Only runs when the build above fails. Turns the important part of the
+      # Gradle log into annotations, which are much easier to read on a phone
+      # than the raw log.
+      - name: Show build errors
+        if: failure()
+        run: |
+          awk '/FAILURE: Build failed/{f=1} f' /tmp/build.log | head -14 | sed 's/^/::error::/' || true
+          grep -E '^e: ' /tmp/build.log | head -10 | sed 's/^/::error::/' || true
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: CineVerse-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-          
