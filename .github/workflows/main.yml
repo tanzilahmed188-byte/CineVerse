@@ -29,7 +29,14 @@ jobs:
       - name: Build debug APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          set -o pipefail
+          ./gradlew assembleDebug 2>&1 | tee /tmp/build.log
+
+      - name: Report build errors
+        if: failure()
+        run: |
+          grep -E 'e: |error:|FAILURE|Execution failed|Caused by|What went wrong' /tmp/build.log \
+            | tail -40 | sed 's/^/::error::/' || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v5
