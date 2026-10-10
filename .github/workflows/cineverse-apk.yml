@@ -1,13 +1,22 @@
-name: Build CineVerse APK
+name: Build CineVerse (legacy) APK
 
+# CineVerse is the legacy source project kept for reference. This workflow only
+# runs when the legacy :app module itself changes, so the main app (নূর — দুআ ও আমল,
+# see noor-apk.yml) is never blocked by it.
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+    paths:
+      - "app/**"
+      - ".github/workflows/cineverse-apk.yml"
   pull_request:
     branches:
       - main
+    paths:
+      - "app/**"
+      - ".github/workflows/cineverse-apk.yml"
 
 jobs:
   build:
@@ -30,7 +39,7 @@ jobs:
         run: |
           chmod +x gradlew
           set -o pipefail
-          ./gradlew assembleDebug 2>&1 | tee /tmp/build.log
+          ./gradlew :app:assembleDebug 2>&1 | tee /tmp/build.log
 
       # Only runs when the build above fails. Turns the important part of the
       # Gradle log into annotations, which are much easier to read on a phone
