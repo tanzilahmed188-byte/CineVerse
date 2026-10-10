@@ -35,8 +35,8 @@ jobs:
       - name: Report build errors
         if: failure()
         run: |
-          grep -E 'e: |error:|FAILURE|Execution failed|Caused by|What went wrong' /tmp/build.log \
-            | tail -40 | sed 's/^/::error::/' || true
+          awk '/FAILURE: Build failed/{f=1} f' /tmp/build.log | head -14 | sed 's/^/::error::/' || true
+          tail -8 /tmp/build.log | sed 's/^/::notice::/' || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v5
