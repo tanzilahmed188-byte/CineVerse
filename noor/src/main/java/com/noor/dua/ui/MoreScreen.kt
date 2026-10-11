@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,13 +30,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
@@ -52,7 +54,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -64,8 +65,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.noor.dua.data.DuaRepository
-import com.noor.dua.ui.theme.Gold
-import com.noor.dua.ui.theme.GoldLight
 
 /* ------------------------------------------------------------------ "আরও" স্ক্রিন */
 
@@ -73,8 +72,6 @@ import com.noor.dua.ui.theme.GoldLight
 fun MoreScreen(
     topInset: Dp,
     bottomSpace: Dp,
-    onOpenFavorites: () -> Unit,
-    onOpenTasbih: () -> Unit,
     onOpenDua: (String) -> Unit,
     onMessage: (String) -> Unit,
 ) {
@@ -83,10 +80,10 @@ fun MoreScreen(
     val categories = DuaRepository.categories.size
 
     LazyColumn(
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = topInset + 14.dp, bottom = bottomSpace),
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = topInset + 8.dp, bottom = bottomSpace),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { SectionHeader("আরও", "অ্যাপ সম্পর্কে ও অতিরিক্ত ফিচার") }
+        item { ScreenHeader("আরও", "অ্যাপ সম্পর্কে ও দরকারি তথ্য", topInset = 0.dp) }
 
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -98,26 +95,18 @@ fun MoreScreen(
 
         item {
             MenuRow(
-                title = "প্রিয় দুআ",
-                subtitle = "আপনার সংরক্ষিত দুআর তালিকা",
-                icon = Icons.Filled.Favorite,
-                onClick = onOpenFavorites,
-            )
-        }
-        item {
-            MenuRow(
-                title = "ডিজিটাল তাসবিহ",
-                subtitle = "সুবহানাল্লাহ, আলহামদুলিল্লাহ, আল্লাহু আকবার গুনুন",
-                icon = Icons.Filled.AutoAwesome,
-                onClick = onOpenTasbih,
-            )
-        }
-        item {
-            MenuRow(
                 title = "সাইয়েদুল ইস্তিগফার",
                 subtitle = "সকাল-সন্ধ্যার সর্বশ্রেষ্ঠ দুআ পড়ুন",
                 icon = Icons.Filled.Verified,
                 onClick = { onOpenDua("day-4") },
+            )
+        }
+        item {
+            MenuRow(
+                title = "সব দুআ একসাথে",
+                subtitle = "১২টি বিষয়ের সব দুআ ও হাদিসের তালিকা",
+                icon = Icons.Filled.MenuBook,
+                onClick = { onMessage("নিচের মেনু থেকে “দুআ” চাপুন") },
             )
         }
         item {
@@ -130,7 +119,8 @@ fun MoreScreen(
                         type = "text/plain"
                         putExtra(
                             Intent.EXTRA_TEXT,
-                            "নূর — দুআ ও আমল: আরবি টেক্সট, উচ্চারণ, বাংলা অর্থ, ফজিলত ও কুরআন-হাদিস রেফারেন্স সহ $total টি দুআ।",
+                            "নূর — দুআ ও আমল: আরবি টেক্সট, উচ্চারণ, বাংলা অর্থ, ফজিলত ও কুরআন-হাদিস " +
+                                "রেফারেন্স সহ $total টি দুআ। ইন্টারনেট ছাড়াই কাজ করে।",
                         )
                     }
                     context.startActivity(Intent.createChooser(send, "শেয়ার করুন"))
@@ -140,9 +130,7 @@ fun MoreScreen(
 
         item { SectionHeader("যাচাইকরণ", "দুআগুলো কোথা থেকে নেওয়া হয়েছে") }
 
-        item {
-            SourceCard()
-        }
+        item { SourceCard() }
 
         item {
             InfoNote(
@@ -168,9 +156,10 @@ fun MoreScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    "সংস্করণ ১.০ • ইন্টারনেট ছাড়াই কাজ করে",
+                    "সংস্করণ ১.১ • ইন্টারনেট ছাড়াই কাজ করে • ফোনের থিম অনুসরণ করে",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
@@ -183,14 +172,14 @@ private fun StatCard(value: String, label: String, modifier: Modifier = Modifier
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        shadowElevation = 2.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = 1.dp,
     ) {
         Column(Modifier.padding(14.dp)) {
             Text(
                 value,
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(2.dp))
@@ -210,23 +199,15 @@ private fun MenuRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
 ) {
-    PressableCard(onClick = onClick, cornerRadius = 20.dp, elevation = 2.dp) {
+    PressableCard(onClick = onClick, cornerRadius = 20.dp) {
         Row(Modifier.padding(15.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier
                     .size(40.dp)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                MaterialTheme.colorScheme.secondaryContainer,
-                            ),
-                        ),
-                        RoundedCornerShape(13.dp),
-                    ),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(13.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurface)
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
@@ -260,46 +241,47 @@ private fun SourceCard() {
         "সুনানে নাসায়ী / মুসনাদে আহমাদ" to "অতিরিক্ত যাচাই",
     )
     Surface(
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Gold.copy(alpha = 0.30f)),
-        shadowElevation = 3.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shadowElevation = 1.dp,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp)) {
-            sources.forEachIndexed { index, (name, by) ->
-                Row(Modifier.padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+            sources.forEachIndexed { index, (name, note) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         Modifier
                             .size(26.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f), CircleShape),
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            Icons.Filled.MenuBook,
-                            null,
-                            Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.primary,
+                        Text(
+                            "${index + 1}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                     Spacer(Modifier.width(10.dp))
                     Column {
                         Text(name, style = MaterialTheme.typography.titleSmall)
                         Text(
-                            by,
+                            note,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
                 if (index != sources.lastIndex) {
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(9.dp))
                     Box(
                         Modifier
                             .fillMaxWidth()
                             .height(1.dp)
-                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                            .background(MaterialTheme.colorScheme.outlineVariant),
                     )
+                    Spacer(Modifier.height(9.dp))
                 }
             }
         }
@@ -313,7 +295,7 @@ fun FavoritesScreen(
     topInset: Dp,
     bottomSpace: Dp,
     favorites: Set<String>,
-    onBack: () -> Unit,
+    onExplore: () -> Unit,
     onOpenDua: (String) -> Unit,
 ) {
     val list = DuaRepository.duas.filter { favorites.contains(it.id) }
@@ -325,19 +307,57 @@ fun FavoritesScreen(
         item {
             ScreenHeader(
                 title = "প্রিয় দুআ",
-                subtitle = "${list.size}টি সংরক্ষিত",
+                subtitle = if (list.isEmpty()) "এখনো কিছু সংরক্ষণ করা হয়নি" else "${list.size}টি সংরক্ষিত",
                 topInset = 0.dp,
-                onBack = onBack,
             )
         }
         if (list.isEmpty()) {
-            item { EmptyFavorites(onExplore = onBack) }
+            item { EmptyFavorites(onExplore = onExplore) }
         } else {
             items(list, key = { it.id }) { dua ->
                 Staggered(index = list.indexOf(dua)) {
                     DuaListRow(dua = dua, isFavorite = true, onClick = { onOpenDua(dua.id) })
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun EmptyFavorites(onExplore: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 30.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            Icons.Filled.Favorite,
+            null,
+            Modifier.size(36.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(14.dp))
+        Text("এখনো কোনো দুআ সংরক্ষণ করা হয়নি", style = MaterialTheme.typography.titleSmall)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "যেকোনো দুআ খুলে উপরের ♥ চিহ্নে চাপ দিলে সেটি এখানে চলে আসবে।",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(18.dp))
+        Surface(
+            onClick = onExplore,
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+        ) {
+            Text(
+                "দুআ দেখুন",
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 22.dp, vertical = 11.dp),
+            )
         }
     }
 }
@@ -349,7 +369,6 @@ fun TasbihScreen(
     topInset: Dp,
     bottomSpace: Dp,
     prefs: NoorPrefs,
-    onBack: () -> Unit,
 ) {
     val context = LocalContext.current
     var count by remember { mutableIntStateOf(prefs.tasbih()) }
@@ -361,39 +380,49 @@ fun TasbihScreen(
         animationSpec = spring(dampingRatio = 0.6f, stiffness = 300f),
         label = "tasbihProgress",
     )
-    val buttonScale by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = spring(dampingRatio = 0.4f, stiffness = 500f),
-        label = "buttonScale",
-    )
 
     val phrases = listOf("সুবহানাল্লাহ", "আলহামদুলিল্লাহ", "আল্লাহু আকবার")
     val phrase = phrases[(count / target) % phrases.size]
 
+    // Canvas (@Composable না) — তাই রঙগুলো আগেই বের করে নিতে হয়
+    val inkColor = MaterialTheme.colorScheme.onBackground
+    val trackColor = MaterialTheme.colorScheme.outlineVariant
+    val progressColors = listOf(
+        inkColor.copy(alpha = 0.40f),
+        inkColor,
+        inkColor.copy(alpha = 0.40f),
+    )
+
     Column(
         Modifier
             .fillMaxSize()
-            .padding(top = topInset + 8.dp, bottom = bottomSpace),
+            .padding(top = topInset + 8.dp),
     ) {
-        ScreenHeader(title = "ডিজিটাল তাসবিহ", subtitle = "প্রতিটি গুনতিতে হালকা কম্পন", topInset = 0.dp, onBack = onBack)
+        ScreenHeader(
+            title = "ডিজিটাল তাসবিহ",
+            subtitle = "গুনতি সেভ থাকে • প্রতিটি গুনতিতে হালকা কম্পন",
+            topInset = 0.dp,
+        )
 
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = 22.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(start = 22.dp, end = 22.dp, bottom = bottomSpace),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
+            Spacer(Modifier.height(10.dp))
             Text(
                 phrase,
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onBackground,
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
 
             Box(
                 Modifier
-                    .fillMaxWidth(0.78f)
+                    .fillMaxWidth(0.72f)
                     .aspectRatio(1f),
                 contentAlignment = Alignment.Center,
             ) {
@@ -401,7 +430,7 @@ fun TasbihScreen(
                     val stroke = 16.dp.toPx()
                     val inset = stroke / 2
                     drawArc(
-                        color = Color(0x226D8F7E),
+                        color = trackColor.copy(alpha = 0.5f),
                         startAngle = 0f,
                         sweepAngle = 360f,
                         useCenter = false,
@@ -410,7 +439,7 @@ fun TasbihScreen(
                         size = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke),
                     )
                     drawArc(
-                        brush = Brush.sweepGradient(listOf(Gold, GoldLight, Gold)),
+                        brush = Brush.sweepGradient(progressColors),
                         startAngle = -90f,
                         sweepAngle = 360f * animatedProgress,
                         useCenter = false,
@@ -430,7 +459,7 @@ fun TasbihScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             "$value",
-                            style = MaterialTheme.typography.displaySmall.copy(fontSize = 62.sp),
+                            style = MaterialTheme.typography.displaySmall.copy(fontSize = 60.sp),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground,
                         )
@@ -443,7 +472,7 @@ fun TasbihScreen(
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(26.dp))
 
             Surface(
                 onClick = {
@@ -453,30 +482,24 @@ fun TasbihScreen(
                 },
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primary,
-                shadowElevation = 10.dp,
-                modifier = Modifier
-                    .size(126.dp)
-                    .scale(buttonScale),
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shadowElevation = 8.dp,
+                modifier = Modifier.size(126.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Filled.AutoAwesome,
-                            null,
-                            Modifier.size(26.dp),
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                        )
+                        Icon(Icons.Filled.AutoAwesome, null, Modifier.size(26.dp))
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "গুনুন",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(24.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf(33, 100).forEach { t ->
@@ -484,14 +507,14 @@ fun TasbihScreen(
                     Surface(
                         onClick = { target = t },
                         shape = RoundedCornerShape(50),
-                        color = if (selected) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        color = if (selected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
                     ) {
                         Text(
                             "$t বার",
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         )
                     }
@@ -502,35 +525,28 @@ fun TasbihScreen(
                         prefs.setTasbih(0)
                     },
                     shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ) {
                     Row(
                         Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            Icons.Filled.Refresh,
-                            null,
-                            Modifier.size(15.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Icon(Icons.Filled.Refresh, null, Modifier.size(15.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text(
-                            "রিসেট",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Text("রিসেট", style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(22.dp))
             Text(
                 "টিপস: ফাতিমা (রা.)-এর তাসবীহ — ৩৩ বার সুবহানাল্লাহ, ৩৩ বার আলহামদুলিল্লাহ এবং ৩৪ বার আল্লাহু আকবার।",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

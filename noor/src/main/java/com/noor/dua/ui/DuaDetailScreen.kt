@@ -9,9 +9,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,10 +29,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,14 +46,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.noor.dua.data.DuaRepository
-import com.noor.dua.ui.theme.Gold
+import com.noor.dua.ui.theme.ArabicTextStyle
 
+/**
+ * একটি দুআর বিস্তারিত পর্দা — উপরে থেকে নিচে পরিষ্কার ধাপে সাজানো:
+ * দুআ (আরবি) → উচ্চারণ → অর্থ → হাদিস ও ফজিলত → আমল।
+ */
 @Composable
 fun DuaDetailScreen(
     duaId: String,
@@ -83,7 +89,8 @@ fun DuaDetailScreen(
         appendLine()
         appendLine("উচ্চারণ: ${dua.pron}")
         appendLine("অর্থ: ${dua.bn}")
-        appendLine("রেফারেন্স: ${dua.ref}")
+        appendLine("ফজিলত: ${dua.fazilat}")
+        appendLine("হাদিস: ${dua.ref} (${dua.grade})")
         appendLine()
         append("— নূর অ্যাপ (দুআ ও আমল)")
     }
@@ -116,31 +123,25 @@ fun DuaDetailScreen(
             )
         }
 
+        // ছোট করে বুঝিয়ে দেওয়া: কুরআন না হাদিস, আর হাদিসটি কতটা সহীহ
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 NoorChip(
-                    text = dua.grade.ifBlank { dua.tag },
-                    leading = Icons.Filled.Verified,
+                    text = dua.tag.ifBlank { "দুআ" },
+                    container = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 )
                 Spacer(Modifier.width(8.dp))
-                NoorChip(
-                    text = dua.tag,
-                    container = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.75f),
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
+                NoorChip(text = dua.grade.ifBlank { "যাচাইকৃত" }, leading = Icons.Filled.Verified)
             }
         }
 
-        // আরবি টেক্সট
+        // ১ — দুআ (আরবি টেক্সট)
         item {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "আরবি",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.weight(1f))
+            DetailCard(
+                label = "দুআ (আরবি)",
+                icon = Icons.Filled.MenuBook,
+                trailing = {
                     Surface(
                         onClick = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -149,8 +150,8 @@ fun DuaDetailScreen(
                             onMessage("দুআটি কপি হয়েছে")
                         },
                         shape = RoundedCornerShape(50),
-                        color = if (copied) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                        color = if (copied) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant,
                     ) {
                         Row(
                             Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -160,29 +161,41 @@ fun DuaDetailScreen(
                                 if (copied) Icons.Filled.Check else Icons.Filled.ContentCopy,
                                 null,
                                 Modifier.size(15.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = if (copied) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                if (copied) "কপি হয়েছে" else "কপি করুন",
+                                if (copied) "কপি হয়েছে" else "কপি",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (copied) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
+                },
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(18.dp))
+                        .padding(horizontal = 16.dp, vertical = 18.dp),
+                    contentAlignment = Alignment.CenterEnd,
+                ) {
+                    Text(
+                        dua.arabic,
+                        style = ArabicTextStyle,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
-                Spacer(Modifier.height(8.dp))
-                ArabicPanel(dua.arabic)
             }
         }
 
-        // উচ্চারণ
+        // ২ — উচ্চারণ
         item {
-            DetailCard(
-                label = "উচ্চারণ",
-                icon = Icons.Filled.Lightbulb,
-                accent = MaterialTheme.colorScheme.tertiary,
-            ) {
+            DetailCard(label = "উচ্চারণ", icon = Icons.Filled.RecordVoiceOver) {
                 Text(
                     dua.pron,
                     style = MaterialTheme.typography.bodyLarge,
@@ -192,13 +205,9 @@ fun DuaDetailScreen(
             }
         }
 
-        // বাংলা অর্থ
+        // ৩ — বাংলা অর্থ
         item {
-            DetailCard(
-                label = "বাংলা অর্থ",
-                icon = Icons.Filled.MenuBook,
-                accent = MaterialTheme.colorScheme.primary,
-            ) {
+            DetailCard(label = "বাংলা অর্থ", icon = Icons.Filled.Translate) {
                 Text(
                     dua.bn,
                     style = MaterialTheme.typography.bodyLarge,
@@ -207,106 +216,90 @@ fun DuaDetailScreen(
             }
         }
 
-        // ফজিলত / উপকারিতা
+        // ৪ — হাদিস, ফজিলত ও রেফারেন্স একসাথে (বুঝতে সহজ)
         item {
-            DetailCard(
-                label = "ফজিলত ও উপকারিতা",
-                icon = Icons.Filled.Verified,
-                accent = Gold,
-            ) {
+            DetailCard(label = "হাদিস ও ফজিলত", icon = Icons.Filled.Verified) {
                 Text(
                     dua.fazilat,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-            }
-        }
-
-        // রেফারেন্স
-        item {
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                shadowElevation = 1.dp,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
-                    Box(
-                        Modifier
-                            .size(34.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(11.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            Icons.Filled.Verified,
-                            null,
-                            Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text("রেফারেন্স", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(3.dp))
-                        Text(dua.ref, style = MaterialTheme.typography.titleSmall)
-                        if (dua.grade.isNotBlank()) {
-                            Spacer(Modifier.height(3.dp))
-                            Text(
-                                "যাচাই: ${dua.grade}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
+                Spacer(Modifier.height(12.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant),
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.Verified,
+                        null,
+                        Modifier.size(15.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.width(7.dp))
+                    Text(
+                        "সূত্র: ${dua.ref}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (dua.grade.isNotBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "হাদিসের মান: ${dua.grade}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
 
-        // আমল
+        // ৫ — আমল (কীভাবে করবেন)
         item {
             PressableCard(
                 onClick = { amalDone = !amalDone },
                 cornerRadius = 20.dp,
-                containerColor = if (amalDone) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
+                containerColor = if (amalDone) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.surface,
-                borderColor = if (amalDone) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                contentColor = if (amalDone) MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.onSurface,
+                borderColor = if (amalDone) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.outlineVariant,
             ) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     val scale by animateFloatAsState(
-                        targetValue = if (amalDone) 1f else 0.85f,
+                        targetValue = if (amalDone) 1f else 0.9f,
                         animationSpec = spring(dampingRatio = 0.45f, stiffness = 700f),
                         label = "amalScale",
                     )
+                    val mark = if (amalDone) MaterialTheme.colorScheme.onPrimary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
                     Box(
                         Modifier
                             .size(34.dp)
                             .scale(scale)
                             .background(
-                                if (amalDone) MaterialTheme.colorScheme.primary
+                                if (amalDone) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f)
                                 else MaterialTheme.colorScheme.surfaceVariant,
                                 RoundedCornerShape(11.dp),
                             ),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            Icons.Filled.Check,
-                            null,
-                            Modifier.size(19.dp),
-                            tint = if (amalDone) MaterialTheme.colorScheme.onPrimary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Icon(Icons.Filled.Check, null, Modifier.size(19.dp), tint = mark)
                     }
                     Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(if (amalDone) "আলহামদুলিল্লাহ — আমল সম্পন্ন" else "আজ এই আমল করেছি", style = MaterialTheme.typography.titleSmall)
-                        Spacer(Modifier.height(3.dp))
+                    Column(Modifier.weight(1f)) {
                         Text(
-                            dua.amal,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            if (amalDone) "আলহামদুলিল্লাহ — আমল সম্পন্ন" else "আজ এই আমল করেছি",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
                         )
+                        Spacer(Modifier.height(3.dp))
+                        Text(dua.amal, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
@@ -318,8 +311,8 @@ fun DuaDetailScreen(
                 enter = fadeIn(tween(500)) + slideInVertically(tween(500)) { it / 4 } + scaleIn(tween(500), initialScale = 0.96f),
             ) {
                 InfoNote(
-                    "মুখস্থ থাকলে আরবিটি ধীরে ধীরে পড়ুন। অর্থ বুঝে দুআ করলে হৃদয় বেশি প্রভাবিত হয়। " +
-                        "ফজিলতের বর্ণনা রাসূলুল্লাহ ﷺ এর হাদিস থেকে নেওয়া।",
+                    "আরবিটা ধীরে ধীরে পড়ুন, অর্থ বুঝে দুআ করলে হৃদয় বেশি প্রভাবিত হয়। " +
+                        "চাইলে নিজেই মূল সূত্র মিলিয়ে নিতে পারবেন — সূত্র প্রতিটি দুআর নিচে দেওয়া আছে।",
                 )
             }
             Spacer(Modifier.height(6.dp))
@@ -329,14 +322,14 @@ fun DuaDetailScreen(
 
 @Composable
 private fun RoundIconAction(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
 ) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+        color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier.size(40.dp),
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -348,14 +341,15 @@ private fun RoundIconAction(
 @Composable
 private fun DetailCard(
     label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    accent: androidx.compose.ui.graphics.Color,
+    icon: ImageVector,
+    trailing: (@Composable () -> Unit)? = null,
+    accent: Color = MaterialTheme.colorScheme.onSurface,
     content: @Composable () -> Unit,
 ) {
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         shadowElevation = 1.dp,
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -364,7 +358,7 @@ private fun DetailCard(
                 Box(
                     Modifier
                         .size(28.dp)
-                        .background(accent.copy(alpha = 0.16f), RoundedCornerShape(9.dp)),
+                        .background(accent.copy(alpha = 0.12f), RoundedCornerShape(9.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(icon, null, Modifier.size(15.dp), tint = accent)
@@ -375,9 +369,11 @@ private fun DetailCard(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
                 )
+                trailing?.invoke()
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             content()
         }
     }

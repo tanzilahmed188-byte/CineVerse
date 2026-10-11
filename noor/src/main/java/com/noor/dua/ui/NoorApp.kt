@@ -4,12 +4,14 @@ import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,9 +32,10 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -54,22 +57,56 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.noor.dua.ui.theme.Gold
 import com.noor.dua.ui.theme.NoorBackdrop
 import kotlinx.coroutines.launch
 
 /* ---------------------------------------------------------------------- রুট */
 
+/**
+ * অ্যাপের পর্দাগুলো। depth = 0 মানে বটম বারের মূল ট্যাব,
+ * depth 1-2 মানে ট্যাবের উপরে খোলা বিস্তারিত পর্দা।
+ */
 sealed interface Route {
     val depth: Int
-    data object Home : Route { override val depth = 0 }
-    data object Categories : Route { override val depth = 0 }
-    data object More : Route { override val depth = 0 }
-    data object Favorites : Route { override val depth = 1 }
-    data object Tasbih : Route { override val depth = 1 }
-    data class CategoryDetail(val catId: String) : Route { override val depth = 1 }
-    data class DuaDetail(val duaId: String) : Route { override val depth = 2 }
+    val tabKey: String
+
+    data object Home : Route {
+        override val depth = 0
+        override val tabKey = "home"
+    }
+
+    data class Browse(val mode: BrowseMode) : Route {
+        override val depth = 0
+        override val tabKey = "browse"
+    }
+
+    data object Tasbih : Route {
+        override val depth = 0
+        override val tabKey = "tasbih"
+    }
+
+    data object Favorites : Route {
+        override val depth = 0
+        override val tabKey = "favorites"
+    }
+
+    data object More : Route {
+        override val depth = 0
+        override val tabKey = "more"
+    }
+
+    data class CategoryDetail(val catId: String, val mode: BrowseMode = BrowseMode.Dua) : Route {
+        override val depth = 1
+        override val tabKey = "browse"
+    }
+
+    data class DuaDetail(val duaId: String) : Route {
+        override val depth = 2
+        override val tabKey = "browse"
+    }
 }
 
 /* -------------------------------------------------------------------- প্রেফারেন্স */
@@ -126,6 +163,12 @@ fun NoorApp() {
         if (stack.size > 1) stack.removeAt(stack.lastIndex)
     }
 
+    fun openTab(route: Route) {
+        forward = false
+        stack.clear()
+        stack.add(route)
+    }
+
     BackHandler(enabled = stack.size > 1) { pop() }
 
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -138,51 +181,33 @@ fun NoorApp() {
                 targetState = current,
                 transitionSpec = {
                     val spec = if (forward) {
-                        (slideInHorizontally(tween(380)) { it / 6 } + fadeIn(tween(300)))
-                            .togetherWith(slideOutHorizontally(tween(380)) { -it / 8 } + fadeOut(tween(220)))
+                        (slideInHorizontally(tween(340)) { it / 6 } + fadeIn(tween(280)))
+                            .togetherWith(slideOutHorizontally(tween(340)) { -it / 8 } + fadeOut(tween(200)))
                     } else {
-                        (slideInHorizontally(tween(380)) { -it / 6 } + fadeIn(tween(300)))
-                            .togetherWith(slideOutHorizontally(tween(380)) { it / 8 } + fadeOut(tween(220)))
+                        (slideInHorizontally(tween(340)) { -it / 6 } + fadeIn(tween(280)))
+                            .togetherWith(slideOutHorizontally(tween(340)) { it / 8 } + fadeOut(tween(200)))
                     }
                     spec
                 },
                 label = "screen",
                 modifier = Modifier.fillMaxSize(),
             ) { route ->
-                val bottomSpace = if (showBottomBar) 96.dp + bottomInset else 24.dp + bottomInset
+                val bottomSpace = if (showBottomBar) 98.dp + bottomInset else 24.dp + bottomInset
                 when (route) {
                     Route.Home -> HomeScreen(
                         topInset = topInset,
                         bottomSpace = bottomSpace,
+                        onBrowse = { mode -> push(Route.Browse(mode)) },
+                        onOpenCategory = { catId -> push(Route.CategoryDetail(catId, BrowseMode.Dua)) },
                         onOpenDua = { push(Route.DuaDetail(it)) },
-                        onOpenCategory = { push(Route.CategoryDetail(it)) },
-                        onSeeAll = { push(Route.Categories) },
-                        onOpenTasbih = { push(Route.Tasbih) },
-                        onOpenFavorites = { push(Route.Favorites) },
                     )
 
-                    Route.Categories -> CategoriesScreen(
+                    is Route.Browse -> BrowseScreen(
+                        initialMode = route.mode,
                         topInset = topInset,
                         bottomSpace = bottomSpace,
                         favorites = favoriteIds,
-                        onOpenCategory = { push(Route.CategoryDetail(it)) },
-                        onOpenDua = { push(Route.DuaDetail(it)) },
-                    )
-
-                    Route.More -> MoreScreen(
-                        topInset = topInset,
-                        bottomSpace = bottomSpace,
-                        onOpenFavorites = { push(Route.Favorites) },
-                        onOpenTasbih = { push(Route.Tasbih) },
-                        onOpenDua = { push(Route.DuaDetail(it)) },
-                        onMessage = { msg -> scope.launch { snackbar.showSnackbar(msg) } },
-                    )
-
-                    Route.Favorites -> FavoritesScreen(
-                        topInset = topInset,
-                        bottomSpace = bottomSpace,
-                        favorites = favoriteIds,
-                        onBack = { pop() },
+                        onOpenCategory = { catId -> push(Route.CategoryDetail(catId, route.mode)) },
                         onOpenDua = { push(Route.DuaDetail(it)) },
                     )
 
@@ -190,11 +215,26 @@ fun NoorApp() {
                         topInset = topInset,
                         bottomSpace = bottomSpace,
                         prefs = prefs,
-                        onBack = { pop() },
+                    )
+
+                    Route.Favorites -> FavoritesScreen(
+                        topInset = topInset,
+                        bottomSpace = bottomSpace,
+                        favorites = favoriteIds,
+                        onExplore = { openTab(Route.Browse(BrowseMode.Dua)) },
+                        onOpenDua = { push(Route.DuaDetail(it)) },
+                    )
+
+                    Route.More -> MoreScreen(
+                        topInset = topInset,
+                        bottomSpace = bottomSpace,
+                        onOpenDua = { push(Route.DuaDetail(it)) },
+                        onMessage = { msg -> scope.launch { snackbar.showSnackbar(msg) } },
                     )
 
                     is Route.CategoryDetail -> CategoryDetailScreen(
                         catId = route.catId,
+                        mode = route.mode,
                         topInset = topInset,
                         bottomSpace = bottomSpace,
                         favorites = favoriteIds,
@@ -217,23 +257,17 @@ fun NoorApp() {
                 }
             }
 
-            // ভাসমান বটম নেভিগেশন
+            // ভাসমান বটম নেভিগেশন — ৫টি আলাদা বাটন
             AnimatedVisibility(
                 visible = showBottomBar,
-                enter = fadeIn(tween(400)),
-                exit = fadeOut(tween(200)),
+                enter = fadeIn(tween(360)),
+                exit = fadeOut(tween(180)),
                 modifier = Modifier.align(Alignment.BottomCenter),
             ) {
                 BottomBar(
                     current = current,
                     bottomInset = bottomInset,
-                    onSelect = { route ->
-                        if (route != current) {
-                            forward = false
-                            stack.clear()
-                            stack.add(route)
-                        }
-                    },
+                    onSelect = { route -> if (route.tabKey != current.tabKey) openTab(route) },
                 )
             }
 
@@ -241,7 +275,7 @@ fun NoorApp() {
                 hostState = snackbar,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = if (showBottomBar) 104.dp + bottomInset else 16.dp),
+                    .padding(bottom = if (showBottomBar) 106.dp + bottomInset else 16.dp),
             )
         }
     }
@@ -255,63 +289,68 @@ fun NoorApp() {
 private data class NavItem(val route: Route, val label: String, val icon: ImageVector)
 
 @Composable
-private fun BottomBar(current: Route, bottomInset: androidx.compose.ui.unit.Dp, onSelect: (Route) -> Unit) {
+private fun BottomBar(current: Route, bottomInset: Dp, onSelect: (Route) -> Unit) {
     val items = listOf(
         NavItem(Route.Home, "হোম", Icons.Filled.Home),
-        NavItem(Route.Categories, "দুআ", Icons.Filled.GridView),
+        NavItem(Route.Browse(BrowseMode.Dua), "দুআ", Icons.Filled.MenuBook),
+        NavItem(Route.Tasbih, "তাসবিহ", Icons.Filled.AutoAwesome),
+        NavItem(Route.Favorites, "প্রিয়", Icons.Filled.Favorite),
         NavItem(Route.More, "আরও", Icons.Filled.MoreHoriz),
     )
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 18.dp, end = 18.dp, bottom = 14.dp + bottomInset),
-        shape = RoundedCornerShape(26.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-        shadowElevation = 14.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Gold.copy(alpha = 0.28f)),
+            .padding(start = 14.dp, end = 14.dp, bottom = 14.dp + bottomInset),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f),
+        shadowElevation = 12.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
+                .padding(horizontal = 4.dp, vertical = 7.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             items.forEach { item ->
-                val selected = current == item.route
-                val pillColor by androidx.compose.animation.animateColorAsState(
-                    targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                    animationSpec = tween(350),
+                val selected = current.tabKey == item.route.tabKey
+                val pillColor by animateColorAsState(
+                    targetValue = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    animationSpec = tween(300),
                     label = "pill",
                 )
+                val contentColor = if (selected) MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.onSurfaceVariant
+
                 Column(
                     Modifier
                         .weight(1f)
                         .selectable(selected = selected, onClick = { onSelect(item.route) })
-                        .padding(vertical = 4.dp),
+                        .padding(vertical = 3.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(
                         Modifier
                             .background(pillColor, RoundedCornerShape(50))
-                            .padding(horizontal = 18.dp, vertical = 4.dp),
+                            .padding(horizontal = 14.dp, vertical = 5.dp),
                     ) {
                         Icon(
                             item.icon,
                             contentDescription = item.label,
-                            tint = if (selected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp),
+                            tint = contentColor,
+                            modifier = Modifier.size(21.dp),
                         )
                     }
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(3.dp))
                     Text(
                         item.label,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (selected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = contentColor,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
                     )
                 }
             }
@@ -324,21 +363,21 @@ private fun BottomBar(current: Route, bottomInset: androidx.compose.ui.unit.Dp, 
 fun ScreenHeader(
     title: String,
     subtitle: String? = null,
-    topInset: androidx.compose.ui.unit.Dp,
+    topInset: Dp,
     onBack: (() -> Unit)? = null,
     trailing: @Composable (() -> Unit)? = null,
 ) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(top = topInset + 10.dp, start = 14.dp, end = 14.dp, bottom = 6.dp),
+            .padding(top = topInset + 10.dp, start = 18.dp, end = 18.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (onBack != null) {
             Surface(
                 onClick = onBack,
                 shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.size(38.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -377,15 +416,15 @@ fun FavoriteIconButton(isFavorite: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(50),
-        color = if (isFavorite) MaterialTheme.colorScheme.secondaryContainer
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+        color = if (isFavorite) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier.size(40.dp),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 Icons.Filled.Favorite,
-                contentDescription = "প্রিয়",
-                tint = if (isFavorite) MaterialTheme.colorScheme.secondary
+                contentDescription = if (isFavorite) "প্রিয় তালিকা থেকে সরান" else "প্রিয় তালিকায় রাখুন",
+                tint = if (isFavorite) MaterialTheme.colorScheme.onPrimary
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(19.dp),
             )

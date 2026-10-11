@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Icon
@@ -32,12 +32,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -46,8 +43,6 @@ import androidx.compose.ui.unit.sp
 import com.noor.dua.data.Dua
 import com.noor.dua.data.DuaRepository
 import com.noor.dua.ui.theme.ArabicTextStyle
-import com.noor.dua.ui.theme.Gold
-import com.noor.dua.ui.theme.GoldLight
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -57,60 +52,41 @@ import java.util.Locale
 fun HomeScreen(
     topInset: Dp,
     bottomSpace: Dp,
-    onOpenDua: (String) -> Unit,
+    onBrowse: (BrowseMode) -> Unit,
     onOpenCategory: (String) -> Unit,
-    onSeeAll: () -> Unit,
-    onOpenTasbih: () -> Unit,
-    onOpenFavorites: () -> Unit,
+    onOpenDua: (String) -> Unit,
 ) {
-    val today = Calendar.getInstance()
-    val dayOfYear = today.get(Calendar.DAY_OF_YEAR)
+    val dayOfYear = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
     val duaOfDay = DuaRepository.duaOfTheDay(dayOfYear)
     val total = DuaRepository.duas.size
+    val categoryCount = DuaRepository.categories.size
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            start = 18.dp, end = 18.dp, top = topInset + 14.dp, bottom = bottomSpace,
-        ),
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = topInset + 14.dp, bottom = bottomSpace),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item { GreetingHeader(total) }
 
+        // দুআ আর হাদিস — দুটি আলাদা বড় বাটন
+        item { BrowseButtons(onBrowse) }
+
         duaOfDay?.let { dua ->
             item {
-                Staggered(index = 0) {
+                Staggered(index = 1) {
                     DuaOfTheDayCard(dua = dua, onOpen = { onOpenDua(dua.id) })
                 }
             }
         }
 
         item {
-            Staggered(index = 1) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    QuickTile(
-                        title = "তাসবিহ",
-                        subtitle = "যিকির গুনুন",
-                        icon = Icons.Filled.AutoAwesome,
-                        modifier = Modifier.weight(1f),
-                        onClick = onOpenTasbih,
-                    )
-                    QuickTile(
-                        title = "প্রিয় দুআ",
-                        subtitle = "আপনার সংরক্ষিত",
-                        icon = Icons.Filled.Favorite,
-                        modifier = Modifier.weight(1f),
-                        onClick = onOpenFavorites,
-                    )
-                }
-            }
+            SectionHeader(
+                "ক্যাটাগরি অনুযায়ী",
+                "$categoryCountটি বিষয় • $totalটি যাচাইকৃত দুআ",
+            )
         }
 
-        item { SectionHeader("ক্যাটাগরি অনুযায়ী", "১২টি বিষয়, ৯৩টি যাচাইকৃত দুআ") }
-
-        item {
-            CategoryRows(DuaRepository.categories, startIndex = 2, onOpenCategory = onOpenCategory)
-        }
+        item { CategoryRows(DuaRepository.categories, startIndex = 2, onOpenCategory = onOpenCategory) }
 
         item { SectionHeader("দেখে নিন", "নির্বাচিত কয়েকটি দুআ") }
 
@@ -118,29 +94,31 @@ fun HomeScreen(
             .mapNotNull { DuaRepository.byId(it) }
 
         items(featured, key = { it.id }) { dua ->
-            val index = featured.indexOf(dua)
-            Staggered(index = index + 6) {
+            Staggered(index = featured.indexOf(dua) + 14) {
                 FeaturedRow(dua = dua, onOpen = { onOpenDua(dua.id) })
             }
         }
 
         item {
             Spacer(Modifier.height(6.dp))
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.Verified,
-                        null,
-                        Modifier.size(15.dp),
-                        tint = MaterialTheme.colorScheme.secondary,
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        "প্রতিটি দুআ কুরআন ও সহীহ হাদিস থেকে যাচাই করা",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Filled.Verified,
+                    null,
+                    Modifier.size(15.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    "প্রতিটি দুআ কুরআন ও সহীহ হাদিস থেকে যাচাই করা",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
             }
             Spacer(Modifier.height(10.dp))
         }
@@ -166,7 +144,7 @@ private fun GreetingHeader(total: Int) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(3.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "নূর",
@@ -175,25 +153,13 @@ private fun GreetingHeader(total: Int) {
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(Modifier.width(10.dp))
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(Gold.copy(alpha = 0.85f), GoldLight.copy(alpha = 0.75f)),
-                        ),
-                    )
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
-            ) {
-                Text(
-                    "$total টি দুআ",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF2A2107),
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            NoorChip(
+                text = "$total টি দুআ",
+                container = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            )
         }
-        Spacer(Modifier.height(3.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
             dateText,
             style = MaterialTheme.typography.bodySmall,
@@ -202,10 +168,85 @@ private fun GreetingHeader(total: Int) {
     }
 }
 
+/* ------------------------------------------------- দুআ / হাদিস — দুটি আলাদা বড় বাটন */
+
+@Composable
+private fun BrowseButtons(onBrowse: (BrowseMode) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        BigTile(
+            title = "দুআ",
+            subtitle = "আরবি, উচ্চারণ ও অর্থ",
+            icon = Icons.Filled.MenuBook,
+            filled = true,
+            modifier = Modifier.weight(1f),
+            onClick = { onBrowse(BrowseMode.Dua) },
+        )
+        BigTile(
+            title = "হাদিস",
+            subtitle = "ফজিলত, সূত্র ও মান",
+            icon = Icons.Filled.Verified,
+            filled = false,
+            modifier = Modifier.weight(1f),
+            onClick = { onBrowse(BrowseMode.Hadith) },
+        )
+    }
+}
+
+@Composable
+private fun BigTile(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    filled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val container = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+    val content = if (filled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+
+    PressableCard(
+        onClick = onClick,
+        modifier = modifier,
+        cornerRadius = 22.dp,
+        containerColor = container,
+        contentColor = content,
+        borderColor = if (filled) container else MaterialTheme.colorScheme.outlineVariant,
+        elevation = if (filled) 4.dp else 1.dp,
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .background(content.copy(alpha = 0.12f), RoundedCornerShape(13.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, Modifier.size(21.dp), tint = content)
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = content,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                color = content.copy(alpha = 0.75f),
+                lineHeight = 15.sp,
+            )
+        }
+    }
+}
+
 /* --------------------------------------------------------------- আজকের দুআ কার্ড */
 
 @Composable
 private fun DuaOfTheDayCard(dua: Dua, onOpen: () -> Unit) {
+    val container = MaterialTheme.colorScheme.primary
+    val content = MaterialTheme.colorScheme.onPrimary
+
     val transition = rememberInfiniteTransition(label = "sheen")
     val phase by transition.animateFloat(
         initialValue = 0f,
@@ -216,44 +257,41 @@ private fun DuaOfTheDayCard(dua: Dua, onOpen: () -> Unit) {
 
     PressableCard(
         onClick = onOpen,
-        containerColor = MaterialTheme.colorScheme.primary,
-        borderColor = Gold.copy(alpha = 0.45f),
+        containerColor = container,
+        contentColor = content,
+        borderColor = container,
         cornerRadius = 26.dp,
-        elevation = 8.dp,
+        elevation = 6.dp,
     ) {
         Box {
-            // সোনালি ঝিলিক
+            // হালকা ঝিলিক
             Box(
                 Modifier
                     .matchParentSize()
-                    .background(rememberSheenBrush(phase)),
+                    .background(rememberSheenBrush(phase, container)),
             )
             Column(Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Filled.AutoAwesome,
-                        null,
-                        Modifier.size(16.dp),
-                        tint = GoldLight,
-                    )
+                    Icon(Icons.Filled.AutoAwesome, null, Modifier.size(16.dp), tint = content)
                     Spacer(Modifier.width(6.dp))
                     Text(
                         "আজকের দুআ",
                         style = MaterialTheme.typography.labelLarge,
-                        color = GoldLight,
+                        color = content,
+                        fontWeight = FontWeight.Bold,
                     )
                     Spacer(Modifier.weight(1f))
                     NoorChip(
                         text = dua.tag,
-                        container = Color.White.copy(alpha = 0.14f),
-                        contentColor = GoldLight,
+                        container = content.copy(alpha = 0.14f),
+                        contentColor = content,
                     )
                 }
                 Spacer(Modifier.height(14.dp))
                 Text(
                     dua.arabic,
                     style = ArabicTextStyle.copy(fontSize = 24.sp, lineHeight = 46.sp),
-                    color = Color(0xFFFFFBF0),
+                    color = content,
                     textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -261,114 +299,23 @@ private fun DuaOfTheDayCard(dua: Dua, onOpen: () -> Unit) {
                 Text(
                     dua.bn,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFFF2EEE2),
+                    color = content.copy(alpha = 0.88f),
                     maxLines = 3,
                 )
                 Spacer(Modifier.height(14.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.MenuBook, null, Modifier.size(14.dp), tint = GoldLight)
+                    Icon(Icons.Filled.MenuBook, null, Modifier.size(14.dp), tint = content.copy(alpha = 0.8f))
                     Spacer(Modifier.width(6.dp))
                     Text(
                         dua.ref,
                         style = MaterialTheme.typography.labelSmall,
-                        color = GoldLight,
+                        color = content.copy(alpha = 0.8f),
                         maxLines = 1,
                         modifier = Modifier.weight(1f),
                     )
-                    Icon(
-                        Icons.Filled.ChevronRight,
-                        null,
-                        Modifier.size(20.dp),
-                        tint = Color.White.copy(alpha = 0.8f),
-                    )
+                    Icon(Icons.Filled.ChevronRight, null, Modifier.size(20.dp), tint = content)
                 }
             }
-        }
-    }
-}
-
-/* ------------------------------------------------------------------ কুইক টাইল */
-
-@Composable
-private fun QuickTile(
-    title: String,
-    subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    PressableCard(
-        onClick = onClick,
-        modifier = modifier,
-        cornerRadius = 22.dp,
-        elevation = 3.dp,
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Box(
-                Modifier
-                    .size(38.dp)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                MaterialTheme.colorScheme.secondaryContainer,
-                            ),
-                        ),
-                        RoundedCornerShape(12.dp),
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-            }
-            Spacer(Modifier.height(10.dp))
-            Text(title, style = MaterialTheme.typography.titleSmall)
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 16.sp,
-            )
-        }
-    }
-}
-
-/* ------------------------------------------------------------------ ক্যাটাগরি টাইল */
-
-@Composable
-fun CategoryTile(
-    title: String,
-    subtitle: String,
-    count: Int,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    PressableCard(onClick = onClick, modifier = modifier, cornerRadius = 22.dp, elevation = 3.dp) {
-        Column(Modifier.padding(14.dp)) {
-            Box(
-                Modifier
-                    .size(36.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.75f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, null, Modifier.size(19.dp), tint = MaterialTheme.colorScheme.primary)
-            }
-            Spacer(Modifier.height(10.dp))
-            Text(
-                title,
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 2,
-                lineHeight = 20.sp,
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-            )
-            Spacer(Modifier.height(6.dp))
-            NoorChip(text = "$count টি", leading = Icons.Filled.Verified)
         }
     }
 }
@@ -377,30 +324,25 @@ fun CategoryTile(
 
 @Composable
 private fun FeaturedRow(dua: Dua, onOpen: () -> Unit) {
-    PressableCard(onClick = onOpen, cornerRadius = 20.dp, elevation = 2.dp) {
+    PressableCard(onClick = onOpen, cornerRadius = 20.dp) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier
                     .size(42.dp)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(Gold.copy(alpha = 0.28f), GoldLight.copy(alpha = 0.12f)),
-                        ),
-                        RoundedCornerShape(14.dp),
-                    ),
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    Icons.Filled.AutoAwesome,
-                    null,
-                    Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.secondary,
+                Text(
+                    "${dua.title.take(1)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
                 )
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(dua.title, style = MaterialTheme.typography.titleSmall, maxLines = 1)
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(3.dp))
                 Text(
                     dua.ref,
                     style = MaterialTheme.typography.labelSmall,
@@ -414,55 +356,6 @@ private fun FeaturedRow(dua: Dua, onOpen: () -> Unit) {
                 Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-    }
-}
-
-/* ------------------------------------------------------- তালিকার আইটেম স্ট্যাগার অ্যানিমেশন */
-
-@Composable
-fun Staggered(index: Int, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    var visible by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-    androidx.compose.runtime.LaunchedEffect(index) {
-        kotlinx.coroutines.delay((index * 55).toLong().coerceAtMost(700))
-        visible = true
-    }
-    androidx.compose.animation.AnimatedVisibility(
-        visible = visible,
-        modifier = modifier,
-        enter = androidx.compose.animation.fadeIn(tween(420)) +
-            androidx.compose.animation.slideInVertically(tween(420)) { it / 5 },
-    ) {
-        content()
-    }
-}
-
-/** দুই কলামে ভাগ করে সারি বানায় — লেজি লিস্টের ভেতরে ভাঙা তালিকা দেখানোর নিরাপদ উপায় */
-@Composable
-fun CategoryRows(
-    categories: List<com.noor.dua.data.DuaCategory>,
-    startIndex: Int = 0,
-    onOpenCategory: (String) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        categories.chunked(2).forEachIndexed { rowIndex, rowItems ->
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                rowItems.forEachIndexed { columnIndex, cat ->
-                    Staggered(
-                        index = startIndex + rowIndex * 2 + columnIndex,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        CategoryTile(
-                            title = cat.title,
-                            subtitle = cat.subtitle,
-                            count = DuaRepository.countOf(cat.id),
-                            icon = categoryIcon(cat.icon),
-                            onClick = { onOpenCategory(cat.id) },
-                        )
-                    }
-                }
-                if (rowItems.size == 1) Spacer(Modifier.weight(1f))
-            }
         }
     }
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="noor_window_background">#F6F1E7</color>
-    <color name="noor_icon_background">#0A3226</color>
+    <!-- অ্যাপ কালো-সাদা থিমের, তাই লঞ্চ/উইন্ডো ব্যাকগ্রাউন্ডও সাদা -->
+    <color name="noor_window_background">#FFFFFF</color>
+    <color name="noor_icon_background">#111111</color>
 </resources>

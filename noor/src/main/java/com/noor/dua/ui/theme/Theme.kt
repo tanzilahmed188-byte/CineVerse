@@ -1,11 +1,5 @@
 package com.noor.dua.ui.theme
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -31,66 +25,66 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.noor.dua.R
-import kotlin.math.cos
-import kotlin.math.sin
 
 /* ----------------------------------------------------------------------------
  *  নূর — রঙ (Colours)
- *  গাঢ় পান্না-সবুজ (emerald) + সোনালি (gold) প্যালেট, আরবি-ইসলামি নকশার সাথে মানানসই
+ *  শুধু কালো, সাদা ও ধূসর — কোনো রঙিন অ্যাকসেন্ট নেই, তাই লেখা পড়তে সবচেয়ে আরাম।
+ *  অ্যাপ ফোনের সেটিং (সিস্টেম ডিফল্ট) অনুযায়ী নিজে থেকেই লাইট বা ডার্ক হয়।
  * -------------------------------------------------------------------------- */
 
-val EmeraldDeep = Color(0xFF0E4A38)
-val EmeraldInk = Color(0xFF0A2A20)
-val EmeraldSoft = Color(0xFFD9EBE1)
-val Gold = Color(0xFFD4AF37)
-val GoldLight = Color(0xFFEBD08A)
-val GoldDeep = Color(0xFF9A7B2E)
-val SandLight = Color(0xFFF7F2E7)
-val InkNight = Color(0xFF061411)
-val NightSurface = Color(0xFF0D1D18)
+val Ink = Color(0xFF111111)           // মূল কালো (লাইট থিমে প্রধান রঙ)
+val InkSoft = Color(0xFF5A5A5A)       // হালকা ধূসর কালি
+val Hairline = Color(0xFFE4E4E4)      // সূক্ষ্ম সীমানা/দাগ (লাইট)
+val Paper = Color(0xFFFFFFFF)         // সাদা
+val Mist = Color(0xFFF1F1F1)          // হালকা ধূসর পৃষ্ঠ
+val NightBase = Color(0xFF000000)     // ডার্ক থিমের ব্যাকগ্রাউন্ড
+val NightSurface = Color(0xFF121212)  // ডার্ক থিমের কার্ড
+val NightMist = Color(0xFF1E1E1E)
+val NightHairline = Color(0xFF2E2E2E)
+val Snow = Color(0xFFF4F4F4)          // ডার্ক থিমে প্রধান (প্রায় সাদা)
 
 private val LightScheme = lightColorScheme(
-    primary = EmeraldDeep,
-    onPrimary = Color(0xFFFFFBF0),
-    primaryContainer = EmeraldSoft,
-    onPrimaryContainer = EmeraldInk,
-    secondary = GoldDeep,
-    onSecondary = Color(0xFFFFFBF0),
-    secondaryContainer = Color(0xFFF3E4C2),
-    onSecondaryContainer = Color(0xFF2E2408),
-    tertiary = Color(0xFF3F6B52),
-    onTertiary = Color(0xFFFFFFFF),
-    background = SandLight,
-    onBackground = Color(0xFF1B1C18),
-    surface = Color(0xFFFFFDF7),
-    onSurface = Color(0xFF1B1C18),
-    surfaceVariant = Color(0xFFEDE6D6),
-    onSurfaceVariant = Color(0xFF4A4638),
-    outline = Color(0xFFC9BFA8),
-    outlineVariant = Color(0xFFE2DAC7),
+    primary = Ink,
+    onPrimary = Paper,
+    primaryContainer = Color(0xFFEDEDED),
+    onPrimaryContainer = Color(0xFF141414),
+    secondary = InkSoft,
+    onSecondary = Paper,
+    secondaryContainer = Color(0xFFE8E8E8),
+    onSecondaryContainer = Color(0xFF1A1A1A),
+    tertiary = Color(0xFF6B6B6B),
+    onTertiary = Paper,
+    background = Color(0xFFFAFAFA),
+    onBackground = Color(0xFF101010),
+    surface = Paper,
+    onSurface = Color(0xFF101010),
+    surfaceVariant = Mist,
+    onSurfaceVariant = Color(0xFF565656),
+    outline = Color(0xFFC4C4C4),
+    outlineVariant = Hairline,
     error = Color(0xFFB3261E),
-    onError = Color(0xFFFFFFFF),
+    onError = Paper,
 )
 
 private val DarkScheme = darkColorScheme(
-    primary = GoldLight,
-    onPrimary = Color(0xFF21190A),
-    primaryContainer = Color(0xFF17352A),
-    onPrimaryContainer = Color(0xFFDDF1E6),
-    secondary = Color(0xFFD6BC84),
-    onSecondary = Color(0xFF231B08),
-    secondaryContainer = Color(0xFF2E2711),
-    onSecondaryContainer = Color(0xFFF6E4BE),
-    tertiary = Color(0xFF9CC7AC),
-    onTertiary = Color(0xFF0B2117),
-    background = InkNight,
-    onBackground = Color(0xFFE8E6DC),
+    primary = Snow,
+    onPrimary = Color(0xFF101010),
+    primaryContainer = Color(0xFF262626),
+    onPrimaryContainer = Color(0xFFF0F0F0),
+    secondary = Color(0xFFCFCFCF),
+    onSecondary = Color(0xFF141414),
+    secondaryContainer = Color(0xFF2B2B2B),
+    onSecondaryContainer = Color(0xFFECECEC),
+    tertiary = Color(0xFFABABAB),
+    onTertiary = Color(0xFF101010),
+    background = NightBase,
+    onBackground = Color(0xFFEDEDED),
     surface = NightSurface,
-    onSurface = Color(0xFFEAE8DF),
-    surfaceVariant = Color(0xFF1C2D26),
-    onSurfaceVariant = Color(0xFFC6C8BB),
-    outline = Color(0xFF40544A),
-    outlineVariant = Color(0xFF243831),
+    onSurface = Color(0xFFEDEDED),
+    surfaceVariant = NightMist,
+    onSurfaceVariant = Color(0xFFB2B2B2),
+    outline = Color(0xFF3C3C3C),
+    outlineVariant = NightHairline,
     error = Color(0xFFF2B8B5),
     onError = Color(0xFF601410),
 )
@@ -130,15 +124,19 @@ private val NoorTypography = Typography().run {
         titleLarge = titleLarge.copy(fontFamily = BengaliFont, fontWeight = FontWeight.Bold),
         titleMedium = titleMedium.copy(fontFamily = BengaliFont, fontWeight = FontWeight.SemiBold),
         titleSmall = titleSmall.copy(fontFamily = BengaliFont, fontWeight = FontWeight.SemiBold),
-        bodyLarge = bodyLarge.copy(fontFamily = BengaliFont, lineHeight = 28.sp),
-        bodyMedium = bodyMedium.copy(fontFamily = BengaliFont, lineHeight = 25.sp),
-        bodySmall = bodySmall.copy(fontFamily = BengaliFont, lineHeight = 20.sp),
+        bodyLarge = bodyLarge.copy(fontFamily = BengaliFont, lineHeight = 29.sp),
+        bodyMedium = bodyMedium.copy(fontFamily = BengaliFont, lineHeight = 26.sp),
+        bodySmall = bodySmall.copy(fontFamily = BengaliFont, lineHeight = 21.sp),
         labelLarge = labelLarge.copy(fontFamily = BengaliFont, fontWeight = FontWeight.SemiBold),
         labelMedium = labelMedium.copy(fontFamily = BengaliFont),
         labelSmall = labelSmall.copy(fontFamily = BengaliFont),
     )
 }
 
+/**
+ * অ্যাপের থিম — ডিফল্টভাবে ফোনের সিস্টেম সেটিং অনুসরণ করে
+ * (ফোন ডার্ক মোডে থাকলে অ্যাপও ডার্ক, নাহলে লাইট)।
+ */
 @Composable
 fun NoorTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     MaterialTheme(
@@ -149,23 +147,17 @@ fun NoorTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable (
 }
 
 /* ----------------------------------------------------------------------------
- *  অ্যানিমেটেড ব্যাকড্রপ — ধীরে বদলানো গ্রেডিয়েন্ট, গ্লো আর জ্বলজ্বলে তারা
+ *  ব্যাকড্রপ — খুব হালকা ধূসর গ্রেডিয়েন্ট আর চোখে পড়ার মতো নয় এমন ইসলামি নকশা।
+ *  ব্যাটারি বাঁচাতে এখানে আর কোনো অ্যানিমেশন চলে না।
  * -------------------------------------------------------------------------- */
 
 @Composable
 fun NoorBackdrop(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     val dark = MaterialTheme.colorScheme.background.luminanceLow()
-    val transition = rememberInfiniteTransition(label = "backdrop")
-    val phase by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(26000, easing = LinearEasing), RepeatMode.Restart),
-        label = "phase",
-    )
 
     Box(modifier = modifier.fillMaxSize()) {
         Canvas(Modifier.fillMaxSize()) {
-            drawBackdrop(phase, dark)
+            drawBackdrop(dark)
         }
         content()
     }
@@ -173,13 +165,13 @@ fun NoorBackdrop(modifier: Modifier = Modifier, content: @Composable BoxScope.()
 
 private fun Color.luminanceLow(): Boolean = (red * 0.299f + green * 0.587f + blue * 0.114f) < 0.5f
 
-private fun DrawScope.drawBackdrop(phase: Float, dark: Boolean) {
+private fun DrawScope.drawBackdrop(dark: Boolean) {
     val w = size.width
     val h = size.height
 
-    val top = if (dark) Color(0xFF0A1F19) else Color(0xFFFDF9F0)
-    val mid = if (dark) Color(0xFF061411) else Color(0xFFF6F0E4)
-    val bottom = if (dark) Color(0xFF030C09) else Color(0xFFEFE7D6)
+    val top = if (dark) Color(0xFF0C0C0C) else Color(0xFFFFFFFF)
+    val mid = if (dark) Color(0xFF010101) else Color(0xFFF9F9F9)
+    val bottom = if (dark) Color(0xFF0A0A0A) else Color(0xFFEFEFEF)
 
     drawRect(
         brush = Brush.linearGradient(
@@ -190,28 +182,31 @@ private fun DrawScope.drawBackdrop(phase: Float, dark: Boolean) {
         size = size,
     )
 
-    // ধীরে ভেসে বেড়ানো আলোর বল (glow blobs)
-    val glowA = if (dark) GoldLight.copy(alpha = 0.10f) else Gold.copy(alpha = 0.13f)
-    val glowB = if (dark) Color(0xFF2E8B6A).copy(alpha = 0.16f) else Color(0xFF4F9C79).copy(alpha = 0.13f)
+    // দুই কোণায় খুব হালকা আলো-ছায়া, যাতে স্ক্রিনটা সমান না দেখায়
+    val glowA = if (dark) Color.White.copy(alpha = 0.045f) else Color.Black.copy(alpha = 0.030f)
+    val glowB = if (dark) Color.White.copy(alpha = 0.030f) else Color.Black.copy(alpha = 0.020f)
 
-    val aX = w * (0.18f + 0.10f * sin(phase * 6.2832f))
-    val aY = h * (0.12f + 0.06f * cos(phase * 6.2832f))
     drawCircle(
-        brush = Brush.radialGradient(listOf(glowA, Color.Transparent), center = Offset(aX, aY), radius = w * 0.55f),
-        radius = w * 0.55f,
-        center = Offset(aX, aY),
+        brush = Brush.radialGradient(
+            listOf(glowA, Color.Transparent),
+            center = Offset(w * 0.15f, h * 0.10f),
+            radius = w * 0.62f,
+        ),
+        radius = w * 0.62f,
+        center = Offset(w * 0.15f, h * 0.10f),
+    )
+    drawCircle(
+        brush = Brush.radialGradient(
+            listOf(glowB, Color.Transparent),
+            center = Offset(w * 0.88f, h * 0.78f),
+            radius = w * 0.66f,
+        ),
+        radius = w * 0.66f,
+        center = Offset(w * 0.88f, h * 0.78f),
     )
 
-    val bX = w * (0.85f + 0.08f * cos(phase * 5.1f))
-    val bY = h * (0.72f + 0.09f * sin(phase * 5.1f))
-    drawCircle(
-        brush = Brush.radialGradient(listOf(glowB, Color.Transparent), center = Offset(bX, bY), radius = w * 0.60f),
-        radius = w * 0.60f,
-        center = Offset(bX, bY),
-    )
-
-    // হালকা ইসলামি জ্যামিতিক নকশা
-    val line = if (dark) Color.White.copy(alpha = 0.030f) else EmeraldInk.copy(alpha = 0.035f)
+    // হালকা ইসলামি জ্যামিতিক নকশা (গাঢ় নয়, শুধু যেন পেছনে গঠন থাকে)
+    val line = if (dark) Color.White.copy(alpha = 0.020f) else Color.Black.copy(alpha = 0.024f)
     val cell = w / 5.2f
     var row = 0
     while (row * cell < h + cell) {
@@ -230,31 +225,6 @@ private fun DrawScope.drawBackdrop(phase: Float, dark: Boolean) {
             col++
         }
         row++
-    }
-
-    // জ্বলজ্বলে তারা (twinkle)
-    val sparkle = if (dark) GoldLight.copy(alpha = 0.55f) else GoldDeep.copy(alpha = 0.28f)
-    val spots = listOf(
-        Triple(0.14f, 0.20f, 0.9f), Triple(0.86f, 0.14f, 1.4f), Triple(0.72f, 0.44f, 2.2f),
-        Triple(0.28f, 0.62f, 1.1f), Triple(0.52f, 0.86f, 1.8f), Triple(0.92f, 0.72f, 0.6f),
-    )
-    spots.forEachIndexed { i, (fx, fy, speed) ->
-        val tw = 0.35f + 0.65f * ((sin((phase * speed + i * 0.37f) * 6.2832f) + 1f) / 2f)
-        val r = w * 0.006f * (0.7f + tw * 0.9f)
-        val c = Offset(w * fx, h * fy)
-        drawCircle(color = sparkle.copy(alpha = sparkle.alpha * tw), radius = r, center = c)
-        drawLine(
-            color = sparkle.copy(alpha = sparkle.alpha * tw * 0.5f),
-            start = Offset(c.x - r * 3.2f, c.y),
-            end = Offset(c.x + r * 3.2f, c.y),
-            strokeWidth = 1f,
-        )
-        drawLine(
-            color = sparkle.copy(alpha = sparkle.alpha * tw * 0.5f),
-            start = Offset(c.x, c.y - r * 3.2f),
-            end = Offset(c.x, c.y + r * 3.2f),
-            strokeWidth = 1f,
-        )
     }
 }
 
