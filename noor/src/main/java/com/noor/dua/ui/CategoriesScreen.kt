@@ -1,10 +1,8 @@
 package com.noor.dua.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,37 +38,58 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.noor.dua.data.Dua
 import com.noor.dua.data.DuaRepository
+import com.noor.dua.ui.theme.ArabicTextStyle
+
+/* ---------------------------------------------------- দুআ / হাদিস ব্রাউজ স্ক্রিন */
 
 @Composable
-fun CategoriesScreen(
+fun BrowseScreen(
+    initialMode: BrowseMode,
     topInset: Dp,
     bottomSpace: Dp,
     favorites: Set<String>,
     onOpenCategory: (String) -> Unit,
     onOpenDua: (String) -> Unit,
 ) {
+    var mode by remember(initialMode) { mutableStateOf(initialMode) }
     var query by remember { mutableStateOf("") }
     val results = remember(query) { DuaRepository.search(query) }
 
     LazyColumn(
-        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = topInset + 14.dp, bottom = bottomSpace),
+        contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = topInset + 8.dp, bottom = bottomSpace),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            SectionHeader("সব দুআ", "যেকোনো দুআ লিখে খুঁজুন — বাংলা, উচ্চারণ বা রেফারেন্স দিয়ে")
+            ScreenHeader(
+                title = mode.title,
+                subtitle = mode.subtitle,
+                topInset = 0.dp,
+            )
         }
+
+        // দুআ ও হাদিস — যেকোনো সময় এক চাপে বদলানো যায়
+        item { ModeSwitch(selected = mode, onSelect = { mode = it }) }
 
         item {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("দুআ খুঁজুন… যেমন: ঘুম, ঋণ, শিফা", style = MaterialTheme.typography.bodyMedium) },
-                leadingIcon = { Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.primary) },
+                placeholder = {
+                    Text(
+                        "দুআ বা বিষয় খুঁজুন… যেমন: ঘুম, ঋণ, শিফা",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                },
+                leadingIcon = {
+                    Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                },
                 trailingIcon = {
                     AnimatedVisibility(visible = query.isNotEmpty(), enter = fadeIn(), exit = fadeOut()) {
                         IconButton(onClick = { query = "" }) {
@@ -82,15 +103,16 @@ fun CategoriesScreen(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
         }
 
         if (query.isBlank()) {
             item {
-                CategoryRows(DuaRepository.categories, onOpenCategory = onOpenCategory)
+                InfoNote("${mode.hint} — প্রতিটির সাথে আরবি, উচ্চারণ ও অর্থ দেওয়া আছে।")
             }
+            item { CategoryRows(DuaRepository.categories, startIndex = 3, onOpenCategory = onOpenCategory) }
         } else {
             item {
                 Text(
@@ -100,37 +122,45 @@ fun CategoriesScreen(
                 )
             }
             if (results.isEmpty()) {
-                item {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 30.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Filled.Search,
-                                null,
-                                Modifier.size(34.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Spacer(Modifier.height(10.dp))
-                            Text("কিছু পাওয়া যায়নি", style = MaterialTheme.typography.titleSmall)
-                            Text(
-                                "অন্য শব্দ দিয়ে খুঁজে দেখুন",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
+                item { NoResults() }
             } else {
                 items(results, key = { it.id }) { dua ->
                     Staggered(index = results.indexOf(dua)) {
-                        DuaListRow(dua = dua, isFavorite = favorites.contains(dua.id), onClick = { onOpenDua(dua.id) })
+                        DuaListRow(
+                            dua = dua,
+                            isFavorite = favorites.contains(dua.id),
+                            mode = mode,
+                            onClick = { onOpenDua(dua.id) },
+                        )
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun NoResults() {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 30.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                Icons.Filled.SearchOff,
+                null,
+                Modifier.size(34.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(10.dp))
+            Text("কিছু পাওয়া যায়নি", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "অন্য শব্দ দিয়ে খুঁজে দেখুন",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -140,6 +170,7 @@ fun CategoriesScreen(
 @Composable
 fun CategoryDetailScreen(
     catId: String,
+    mode: BrowseMode,
     topInset: Dp,
     bottomSpace: Dp,
     favorites: Set<String>,
@@ -165,12 +196,20 @@ fun CategoryDetailScreen(
         }
 
         item {
-            InfoNote("এই ক্যাটাগরির ${list.size}টি দুআ — প্রতিটির সাথে আরবি, উচ্চারণ, অর্থ, ফজিলত এবং কুরআন/হাদিসের রেফারেন্স দেওয়া আছে।")
+            InfoNote(
+                "এই বিষয়ে ${list.size}টি দুআ — ${mode.subtitle}। " +
+                    "প্রতিটির সাথে কুরআন/হাদিসের রেফারেন্স ও হাদিসের মান দেওয়া আছে।",
+            )
         }
 
         items(list, key = { it.id }) { dua ->
             Staggered(index = list.indexOf(dua)) {
-                DuaListRow(dua = dua, isFavorite = favorites.contains(dua.id), onClick = { onOpenDua(dua.id) })
+                DuaListRow(
+                    dua = dua,
+                    isFavorite = favorites.contains(dua.id),
+                    mode = mode,
+                    onClick = { onOpenDua(dua.id) },
+                )
             }
         }
     }
@@ -179,23 +218,25 @@ fun CategoryDetailScreen(
 /* ------------------------------------------------------------------ তালিকার সারি */
 
 @Composable
-fun DuaListRow(dua: Dua, isFavorite: Boolean, onClick: () -> Unit) {
-    PressableCard(onClick = onClick, cornerRadius = 20.dp, elevation = 2.dp) {
+fun DuaListRow(
+    dua: Dua,
+    isFavorite: Boolean,
+    mode: BrowseMode = BrowseMode.Dua,
+    onClick: () -> Unit,
+) {
+    PressableCard(onClick = onClick, cornerRadius = 20.dp) {
         Column(Modifier.padding(15.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier
                         .size(30.dp)
-                        .background(
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-                            RoundedCornerShape(10.dp),
-                        ),
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         "${dua.title.take(1)}",
                         style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -209,22 +250,48 @@ fun DuaListRow(dua: Dua, isFavorite: Boolean, onClick: () -> Unit) {
                 if (isFavorite) {
                     Icon(
                         Icons.Filled.Favorite,
-                        null,
+                        "প্রিয় দুআ",
                         Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.secondary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                dua.bn,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-            )
-            Spacer(Modifier.height(8.dp))
+
+            Spacer(Modifier.height(9.dp))
+
+            if (mode == BrowseMode.Dua) {
+                // দুআ যেভাবে পড়বেন: আরবি লাইন + বাংলা অর্থ
+                Text(
+                    dua.arabic,
+                    style = ArabicTextStyle.copy(fontSize = 19.sp, lineHeight = 34.sp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    dua.bn,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                )
+            } else {
+                // হাদিস যেভাবে বুঝবেন: ফজিলত + সূত্র
+                Text(
+                    dua.fazilat,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                NoorChip(text = dua.grade.ifBlank { dua.tag })
+                NoorChip(
+                    text = dua.grade.ifBlank { dua.tag },
+                    leading = Icons.Filled.Verified,
+                )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     dua.ref,
@@ -237,26 +304,3 @@ fun DuaListRow(dua: Dua, isFavorite: Boolean, onClick: () -> Unit) {
         }
     }
 }
-
-@Composable
-fun EmptyFavorites(onExplore: () -> Unit) {
-    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                Icons.Filled.Favorite,
-                null,
-                Modifier.size(36.dp),
-                tint = MaterialTheme.colorScheme.secondary,
-            )
-            Spacer(Modifier.height(12.dp))
-            Text("এখনো কোনো দুআ সংরক্ষণ করা হয়নি", style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "কোনো দুআ খুলে ♥ চাপ দিলে সেটি এখানে জমা হবে।",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
