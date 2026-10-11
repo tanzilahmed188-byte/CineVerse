@@ -82,7 +82,7 @@ fun HomeScreen(
         item {
             SectionHeader(
                 "ক্যাটাগরি অনুযায়ী",
-                "$categoryCountটি বিষয় • $totalটি যাচাইকৃত দুআ",
+                "${categoryCount}টি বিষয় • ${total}টি যাচাইকৃত দুআ",
             )
         }
 
